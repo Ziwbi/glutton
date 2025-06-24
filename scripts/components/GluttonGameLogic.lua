@@ -104,11 +104,11 @@ local function OnPlayerEat( inst, data )
 			end
 			hunger_value = hunger_value * calorie_convert * crock_pot_bonus * cooked_bonus
 			
-			local glutton_bonus = inst.components.GluttonBonus.glutton_bonus
+			local glutton_bonus = inst.components.gluttonbonus.glutton_bonus
 			local modified_hunger_value = hunger_value * glutton_bonus
 			
 			--add the new item
-			inst.components.GluttonBonus:Ate(hunger_value)
+			inst.components.gluttonbonus:OnEat(hunger_value)
 			
 			_GluttonGameLogic:AteCalories( _GluttonGameLogic.calories_eaten + modified_hunger_value )
 			local bonuses_plural = "Bonus"
@@ -304,8 +304,8 @@ function GluttonGameLogic:OnUpdate(dt)
 			self.bonus_widget:SetPosition(300, 65)
 		end
 		
-		local bonus = ThePlayer.components.GluttonBonus.glutton_bonus
-		local bonus_timer = ThePlayer.components.GluttonBonus.glutton_timer
+		local bonus = ThePlayer.components.gluttonbonus.glutton_bonus
+		local bonus_timer = ThePlayer.components.gluttonbonus.glutton_timer
 		self.bonus_widget:SetString( "Your glutton bonus: " .. string.format("x%.1f ", bonus) .. string.format("(%is)", bonus_timer) )		
 	end
 	
