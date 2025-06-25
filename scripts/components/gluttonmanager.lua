@@ -3,6 +3,8 @@
 --------------------------------------------------------------------------
 
 local GameOverDialogScreen = require("screens/gameoverdialog")
+local PopupDialogScreen 	= require("screens/popupdialog")
+local BigPopupDialogScreen 	= require("screens/bigpopupdialog")
 
 --------------------------------------------------------------------------
 --[[ GluttonManager class definition ]]
@@ -84,6 +86,12 @@ local function OnPlayerEat(player, data)
     TheNet:Announce(annouce_string, player.entity)
 end
 
+local function OnPlayerSpawned(src, player)
+	if _ismastersim and TUNING.GLUTTON_AUTO_RESET then
+		self:StartGame()
+	end
+end
+
 local function OnPlayerJoined(src, player)
     _world:ListenForEvent("oneat", OnPlayerEat, player)
 
@@ -93,25 +101,25 @@ local function OnPlayerJoined(src, player)
 
     -- TODO put this in worldgen
     --[[
-    	if not SpawnedExtraGroundItems then
-		local spawn_items = { ["charcoal"] = 15, ["goldnugget"]= 5, ["rocks"]=10}
-		for prefab,count in pairs(spawn_items) do
-			for i=1,count do
-				local attempts = 20 --try multiple times to get a spot on ground before giving up so we don't infinite loop
-				while attempts > 0 do
-					local angle = math.random() * 2 * PI
-					local distance = math.random() * 30
-					local spawn_pos = player:GetPosition() + Vector3( math.sin(angle), 0.0, math.cos(angle) ) * distance
-					if TheWorld.Map:IsAboveGroundAtPoint(spawn_pos:Get()) then
-						local spawn = SpawnAt( prefab, spawn_pos )
-						break
-					end
-					attempts = attempts - 1
-				end
-			end
-		end
-		SpawnedExtraGroundItems = true
-	end
+        if not SpawnedExtraGroundItems then
+        local spawn_items = { ["charcoal"] = 15, ["goldnugget"]= 5, ["rocks"]=10}
+        for prefab,count in pairs(spawn_items) do
+            for i=1,count do
+                local attempts = 20 --try multiple times to get a spot on ground before giving up so we don't infinite loop
+                while attempts > 0 do
+                    local angle = math.random() * 2 * PI
+                    local distance = math.random() * 30
+                    local spawn_pos = player:GetPosition() + Vector3( math.sin(angle), 0.0, math.cos(angle) ) * distance
+                    if TheWorld.Map:IsAboveGroundAtPoint(spawn_pos:Get()) then
+                        local spawn = SpawnAt( prefab, spawn_pos )
+                        break
+                    end
+                    attempts = attempts - 1
+                end
+            end
+        end
+        SpawnedExtraGroundItems = true
+    end
     
     ]]
 end
@@ -136,6 +144,31 @@ local OnGluttonUpdate = _ismastersim and function(src, data)
         _net_total_calories:set(data.total_calories)
     end
 end or nil
+
+local wait_on_screen_stack = false
+
+local function IntroMessage()
+    local text = "You've got ".. tostring(math.ceil(TUNING.GLUTTON_GAME_TIME/60)) .. " minutes for your team to eat as much as you can!\nYou get points for consuming calories. Boost your bonus multiplier by eating food with more calories. To keep your bonus multiplier from falling, you have to eat something every 10 seconds."
+
+    local start_message = BigPopupDialogScreen( "I hope you're hungry!", text, {{text="Ok", cb =
+        function()
+            TheFrontEnd:PopScreen()
+
+            if _game_state == GLUTTON_GAME_STATES.WAIT_TO_START then
+                local wait_text = "The game will begin when everyone is ready and the admin starts the round."
+                local wait_for_players = PopupDialogScreen("Waiting for the game to start...", wait_text, {})
+                TheFrontEnd:PushScreen(wait_for_players)
+                wait_on_screen_stack = true
+            end
+        end}} )
+    start_message.bg:SetScale(1.15, 2.0)
+    start_message.bg.fill:SetScale(1.05, 1)
+    start_message.bg.fill:SetPosition(10, 25)
+    start_message.menu:SetPosition(0, -115)
+    start_message.text:SetRegionSize(600, 200)
+    start_message.text:SetPosition(10, 20)
+    TheFrontEnd:PushScreen(start_message)
+end
 
 --------------------------------------------------------------------------
 --[[ Public methods ]]
@@ -205,26 +238,25 @@ end
 --------------------------------------------------------------------------
 
 if _ismastersim then
+    self.inst:ListenForEvent("ms_playerspawn", OnPlayerSpawned, _world)
     self.inst:ListenForEvent("ms_playerjoined", OnPlayerJoined, _world)
     self.inst:ListenForEvent("ms_playerleft", OnPlayerLeft, _world)
     self.inst:ListenForEvent("gluttonupdate", OnGluttonUpdate, _world)
 
+    if not TheNet:IsDedicated() then
+        self.inst:DoTaskInTime(5, function()
+            if _net_game_state:value() == GLUTTON_GAME_STATES.WAIT_TO_START then
+                SetSimPause(true)
+            end
+        end)
+    end
+
     if not _ismastershard then
         return
     end
+
     _net_total_calories:set(0)
 
-    	-- 	if not TheNet:IsDedicated() then
-		-- 	self.inst:DoTaskInTime( 5,
-		-- 		function()
-		-- 			if self.game_state == GAME_STATE.WAIT_TO_START then
-		-- 				--print("pause after 5 sec wait")
-		-- 				SetSimPause(true)
-		-- 			end
-		-- 		end,
-		-- 		"pause"
-		-- 	)
-		-- end
     if TUNING.GLUTTON_AUTO_RESET then
         _reset_time = 15
     else
@@ -236,7 +268,7 @@ if _ismastersim then
     _game_timer = -1
 end
 
--- self.inst:ListenForEvent("playeractivated", IntroMessage, TheWorld)
+self.inst:ListenForEvent("playeractivated", IntroMessage, TheWorld)
 
 self.inst:StartUpdatingComponent(self)
 
@@ -259,13 +291,12 @@ function self:OnUpdate(dt)
         end
     end
 
-    -- if self.game_state == GAME_STATE.STARTED then
-    --     if wait_on_screen_stack then
-    --         TheFrontEnd:PopScreen()
-    --         wait_on_screen_stack = false
-    --     end
-    -- end
-
+    if _net_game_state:value() == GLUTTON_GAME_STATES.STARTED then
+        if wait_on_screen_stack then
+            TheFrontEnd:PopScreen()
+            wait_on_screen_stack = false
+        end
+    end
 
     if not _ismastershard then
         return
@@ -278,11 +309,11 @@ function self:OnUpdate(dt)
 
         local last_whole_time = math.ceil(_reset_time)
         _reset_time = _reset_time - dt
-        if math.ceil(_reset_time) < last_whole_time then
-            self:SetResetTimer(math.ceil(_reset_time))
-        end
         if _reset_time < 0 then
             c_regenerateworld()
+        end
+        if math.ceil(_reset_time) < last_whole_time then
+            self:SetResetTimer(math.ceil(_reset_time))
         end
     elseif _game_state == GLUTTON_GAME_STATES.STARTED then
         if _game_timer < 0 then

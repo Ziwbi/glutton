@@ -37,20 +37,23 @@ local GameOverDialogScreen = Class(Screen, function(self, title, text)
     --text
     self.text = self.proot:AddChild(Text(BUTTONFONT, 28))
 
-    self.base_test = text
+    self.base_text = text
 
     self.text:SetPosition(0, -10, 0)
-    self.text:SetString(self.base_test)
+    self.text:SetString(self.base_text)
     self.text:EnableWordWrap(true)
     self.text:SetRegionSize(500, 150)
     self.text:SetColour(0, 0, 0, 1)
 end)
 
 function GameOverDialogScreen:UpdateCountdown(reset_time)
-    if reset_time == 0 then
-        self.text:SetString(self.base_test)
+    if reset_time <= 0 then
+        self.text:SetString(self.base_text)
     else
-        self.text:SetString(self.base_test .. "\n\nReset in " .. reset_time)
+        self.text:SetString(self.base_text .. "\n\nReset in " .. reset_time)
+        self.inst:DoTaskInTime(1, function()
+            self:UpdateCountdown(reset_time - 1)
+        end)
     end
 end
 
