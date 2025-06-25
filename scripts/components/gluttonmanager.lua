@@ -52,8 +52,9 @@ local OnEatCalories = _ismastersim and function(player, data)
 
     local crock_pot_mult = data.food:HasTag("preparedfood") and TUNING.PREPARED_FOOD_MULT or 1
     local cooked_mult = string.find(data.food.prefab, "cooked") ~= nil and 3 or 1
+    local spice_mult = data.food:HasTag("spicedfood") and TUNING.SPICED_FOOD_MULT or 1
 
-    calories = calories * TUNING.GLUTTON_BASE_MULT * crock_pot_mult * cooked_mult
+    calories = calories * TUNING.GLUTTON_BASE_MULT * crock_pot_mult * cooked_mult * spice_mult
     local glutton_bonus = player.components.gluttonbonus.glutton_bonus
     local calories_with_bonus = calories * glutton_bonus
     player.components.gluttonbonus:OnEat(calories)
@@ -63,7 +64,7 @@ local OnEatCalories = _ismastersim and function(player, data)
     SendModRPCToShard(SHARD_MOD_RPC["glutton"]["SyncGlutton"], nil, update_data)
 
     local bonuses_plural = "Bonus"
-    if crock_pot_mult > 1 or cooked_mult > 1 then
+    if crock_pot_mult > 1 or cooked_mult > 1 or spice_mult > 1 then
         bonuses_plural = "Bonuses"
     end
     local ate_annouce = player.name .. " ate " .. GluttonUtil.format_num(calories_with_bonus, 0) .. " calories. (" .. bonuses_plural .. " - Glutton: " .. string.format("x%.1f", glutton_bonus)
@@ -72,6 +73,9 @@ local OnEatCalories = _ismastersim and function(player, data)
     end
     if cooked_mult > 1 then
         ate_annouce = ate_annouce .. " Fire Roasted: " .. string.format("x%i", cooked_mult)
+    end
+    if spice_mult > 1 then
+        ate_annouce = ate_annouce .. " Spiced: " .. string.format("x%.1f", spice_mult)
     end
     ate_annouce = ate_annouce .. ")"
     TheNet:Announce(ate_annouce, player.entity)
