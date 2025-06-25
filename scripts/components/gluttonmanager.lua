@@ -28,6 +28,7 @@ local _ismastershard = _world.ismastershard
 local _game_state
 local _game_timer
 local _reset_time
+local _spawned_extra_item = false
 
 --Secondard simulation
 
@@ -99,29 +100,28 @@ local function OnPlayerJoined(src, player)
         SetSimPause(true)
     end
 
-    -- TODO put this in worldgen
-    --[[
-        if not SpawnedExtraGroundItems then
-        local spawn_items = { ["charcoal"] = 15, ["goldnugget"]= 5, ["rocks"]=10}
-        for prefab,count in pairs(spawn_items) do
-            for i=1,count do
-                local attempts = 20 --try multiple times to get a spot on ground before giving up so we don't infinite loop
-                while attempts > 0 do
-                    local angle = math.random() * 2 * PI
-                    local distance = math.random() * 30
-                    local spawn_pos = player:GetPosition() + Vector3( math.sin(angle), 0.0, math.cos(angle) ) * distance
-                    if TheWorld.Map:IsAboveGroundAtPoint(spawn_pos:Get()) then
-                        local spawn = SpawnAt( prefab, spawn_pos )
-                        break
-                    end
-                    attempts = attempts - 1
+    if _spawned_extra_item then
+        return
+    end
+
+    -- I could put this in worldgen but I can't be bothered :3
+    local spawn_items = {charcoal = 15, goldnugget = 5, rocks = 10}
+    for prefab, count in pairs(spawn_items) do
+        for i = 1, count do
+            local attempts = 20 --try multiple times to get a spot on ground before giving up so we don't infinite loop
+            while attempts > 0 do
+                local angle = math.random() * 2 * PI
+                local distance = math.random() * 30
+                local spawn_pos = player:GetPosition() + Vector3(math.sin(angle), 0.0, math.cos(angle)) * distance
+                if TheWorld.Map:IsAboveGroundAtPoint(spawn_pos:Get()) then
+                    SpawnAt(prefab, spawn_pos)
+                    break
                 end
+                attempts = attempts - 1
             end
         end
-        SpawnedExtraGroundItems = true
     end
-    
-    ]]
+    _spawned_extra_item = true
 end
 
 local function OnPlayerLeft(src, player)
