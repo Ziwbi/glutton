@@ -6,4 +6,5 @@ modenv.AddReplicableComponent("sprinter")
 
 modenv.modimport("main/postinit.lua")
 modenv.modimport("main/RPC.lua")
+modenv.modimport("main/shardnetworking.lua")
 modenv.modimport("main/tuning.lua")

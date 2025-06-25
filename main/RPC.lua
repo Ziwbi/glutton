@@ -8,3 +8,11 @@ end)
 AddModRPCHandler("glutton", "StopSprint", function(inst)
     inst.components.sprinter:SetIsSprinting(false)
 end)
+
+AddShardModRPCHandler("glutton", "StartGlutton", function(shardid)
+    Shard_StartGlutton()
+end)
+
+AddShardModRPCHandler("glutton", "SyncGlutton", function(shardid, data)
+    Shard_SyncGlutton(data)
+end)
