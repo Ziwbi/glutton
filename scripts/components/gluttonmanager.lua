@@ -193,7 +193,6 @@ self.SetGameTimer = _ismastershard and function(src, game_timer)
     _game_timer = game_timer
     _net_game_timer:set(game_timer)
 
-    local update_data = {game_timer = game_timer}
     SendModRPCToShard(SHARD_MOD_RPC["glutton"]["SyncGlutton"], nil, nil, game_timer)
 end or nil
 
