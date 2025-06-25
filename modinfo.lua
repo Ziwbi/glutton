@@ -8,8 +8,8 @@ Time is limited so you can hold shift to sprint, careful though, it will burn lo
 \
 To enable this game mode on dedicated servers, set game_mode = glutton in the [network] section of your settings.ini file."
 
-author = "Peter Andrews (peter_a_klei)"
-version = "1.6"
+author = "Peter Andrews (peter_a_klei), ziwbi"
+version = "1.0"
 
 -- This is the URL name of the mod's thread on the forum; the part after the index.php? and before the first & in the URL
 -- Example:
