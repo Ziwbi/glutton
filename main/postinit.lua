@@ -6,3 +6,5 @@ local prefab_postinits = {
 for k, v in pairs(prefab_postinits) do
     modimport("postinit/prefabs/" .. v .. ".lua")
 end
+
+modimport("postinit/screens/playerhud.lua")
