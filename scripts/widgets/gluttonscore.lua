@@ -16,19 +16,17 @@ local GluttonScore = Class(Widget, function(self, owner)
     self.bonus_widget = self:AddChild(Text(UIFONT, 30))
     self.bonus_widget:SetPosition(300, 65)
 
-    self.inst:ListenForEvent("total_calories_dirty", function(src)
-        local calorie_text = "Team's calories eaten: " .. TheWorld.components.gluttonmanager:GetTotalCalories()
-        self.calories_widget:SetString(calorie_text)
-    end, TheWorld)
-
-    self.inst:ListenForEvent("game_timer_dirty", function(src, data)
-        local time_left = TheWorld.components.gluttonmanager:GetGameTimer()
-        local text = TheWorld.components.gluttonmanager:GetGameState() == 1 and tostring(time_left) or "Waiting to start"
-        self.time_widget:SetString(text)
-    end)
+    self:StartUpdating()
 end)
 
 function GluttonScore:OnUpdate(dt)
+    local calorie_text = "Team's calories eaten: " .. TheWorld.net.components.gluttonmanager:GetTotalCalories()
+    self.calories_widget:SetString(calorie_text)
+
+    local time_left = TheWorld.net.components.gluttonmanager:GetGameTimer()
+    local text = TheWorld.net.components.gluttonmanager:GetGameState() == 1 and tostring(time_left) or "Waiting to start"
+    self.time_widget:SetString(text)
+
     local bonus = ThePlayer.components.gluttonbonus.glutton_bonus
     local bonus_timer = ThePlayer.components.gluttonbonus.glutton_timer
     self.bonus_widget:SetString("Your glutton bonus: " .. string.format("x%.1f ", bonus) .. string.format("(%is)", bonus_timer))

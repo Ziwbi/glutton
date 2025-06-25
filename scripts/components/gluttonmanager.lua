@@ -94,6 +94,7 @@ local function OnPlayerEat(player, data)
     local modified_hunger_value = hunger_value * player.components.gluttonbonus.glutton_bonus
 
     player.components.gluttonbonus:OnEat(hunger_value)
+    _world:PushEvent("gluttonupdate", {total_calories = modified_hunger_value})
     SendModRPCToShard(SHARD_MOD_RPC["glutton"]["SyncGlutton"], nil, {total_calories = modified_hunger_value})
 
     local annouce_string = BuildAnnouceString(player, modified_hunger_value)
@@ -151,7 +152,7 @@ local OnGluttonUpdate = _ismastersim and function(src, data)
         _net_game_timer:set(data.game_timer)
     end
     if data.total_calories then
-         _net_total_calories:set(data.total_calories)
+        _net_total_calories:set(data.total_calories)
     end
 end or nil
 
@@ -268,24 +269,24 @@ self.inst:StartUpdatingComponent(self)
 
 function self:OnUpdate(dt)
     --create client UI for reset screen
-    if _game_state == GAME_STATE.OVER_TIMESUP then
-        if self.reset_dialog == nil then
-            local title = "The game is over. The time is up."
-            local message = "\nYour team ate a total of " .. _net_total_calories:value() .. " calories. Thanks for playing!"
+    -- if _game_state == GAME_STATE.OVER_TIMESUP then
+    --     if self.reset_dialog == nil then
+    --         local title = "The game is over. The time is up."
+    --         local message = "\nYour team ate a total of " .. _net_total_calories:value() .. " calories. Thanks for playing!"
 
-            self.reset_dialog = GameOverDialogScreen( title, message )
-            self:SetResetTimer(self.reset_time)
+    --         self.reset_dialog = GameOverDialogScreen( title, message )
+    --         self:SetResetTimer(self.reset_time)
 
-            TheFrontEnd:PushScreen(self.reset_dialog)
-        end
-    end
+    --         TheFrontEnd:PushScreen(self.reset_dialog)
+    --     end
+    -- end
 
-    if self.game_state == GAME_STATE.STARTED then
-        if wait_on_screen_stack then
-            TheFrontEnd:PopScreen()
-            wait_on_screen_stack = false
-        end
-    end
+    -- if self.game_state == GAME_STATE.STARTED then
+    --     if wait_on_screen_stack then
+    --         TheFrontEnd:PopScreen()
+    --         wait_on_screen_stack = false
+    --     end
+    -- end
 
 
     if not _ismastershard then
