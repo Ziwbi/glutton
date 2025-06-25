@@ -61,7 +61,7 @@ local OnEatCalories = _ismastersim and function(player, data)
 
     local update_data = {total_calories = calories_with_bonus}
     _world:PushEvent("gluttonupdate", update_data)
-    SendModRPCToShard(SHARD_MOD_RPC["glutton"]["SyncGlutton"], nil, update_data)
+    SendModRPCToShard(SHARD_MOD_RPC["glutton"]["SyncGlutton"], nil, nil, nil, calories_with_bonus)
 
     local bonuses_plural = "Bonus"
     if crock_pot_mult > 1 or cooked_mult > 1 or spice_mult > 1 then
@@ -89,7 +89,7 @@ local OnEatSoul = _ismastersim and function(player, data)
     OnEatCalories(player, {food = data.soul, base_calories = TUNING.CALORIES_MED * TUNING.SOULS_MULT})
 end or nil
 
-local OnPlayerSpawned = _ismastersim and function(src, player)
+local OnPlayerSpawned = _ismastershard and function(src, player)
 	if TUNING.GLUTTON_AUTO_RESET then
 		self:StartGame()
 	end
@@ -182,8 +182,7 @@ self.SetGameState = _ismastershard and function(src, game_state)
     _game_state = game_state
     _net_game_state:set(game_state)
 
-    local update_data = {game_state = game_state}
-    SendModRPCToShard(SHARD_MOD_RPC["glutton"]["SyncGlutton"], nil, update_data)
+    SendModRPCToShard(SHARD_MOD_RPC["glutton"]["SyncGlutton"], nil, game_state)
 
     self.inst:DoTaskInTime(TUNING.GLUTTON_GAME_TIME - 5 * 60, function() TheNet:Announce("5 minutes left!") end)
     self.inst:DoTaskInTime(TUNING.GLUTTON_GAME_TIME - 1 * 60, function() TheNet:Announce("1 minute left!!") end)
@@ -195,7 +194,7 @@ self.SetGameTimer = _ismastershard and function(src, game_timer)
     _net_game_timer:set(game_timer)
 
     local update_data = {game_timer = game_timer}
-    SendModRPCToShard(SHARD_MOD_RPC["glutton"]["SyncGlutton"], nil, update_data)
+    SendModRPCToShard(SHARD_MOD_RPC["glutton"]["SyncGlutton"], nil, nil, game_timer)
 end or nil
 
 self.SetResetTimer = _ismastershard and function(src, reset_time)
@@ -242,7 +241,6 @@ end
 --------------------------------------------------------------------------
 
 if _ismastersim then
-    self.inst:ListenForEvent("ms_playerspawn", OnPlayerSpawned, _world)
     self.inst:ListenForEvent("ms_playerjoined", OnPlayerJoined, _world)
     self.inst:ListenForEvent("ms_playerleft", OnPlayerLeft, _world)
     self.inst:ListenForEvent("gluttonupdate", OnGluttonUpdate, _world)
@@ -258,6 +256,8 @@ if _ismastersim then
     if not _ismastershard then
         return
     end
+
+    self.inst:ListenForEvent("ms_playerspawn", OnPlayerSpawned, _world)
 
     _net_total_calories:set(0)
 

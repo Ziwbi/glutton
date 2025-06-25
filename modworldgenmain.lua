@@ -1,7 +1,7 @@
 local modenv = env
 GLOBAL.setfenv(1, GLOBAL)
 
-local seed = 83445 -- change this if you want to try a different map
+local seed = 325007510 -- change this if you want to try a different map
 
 local map_type = modenv.GetModConfigData("map_gen")
 if map_type == "fixed" then
@@ -12,7 +12,7 @@ if map_type == "fixed" then
     SEED = seed
 end
 
-modenv.AddLevel(LEVELTYPE.SURVIVAL, {
+modenv.AddLevel("LEVELTYPE_GLUTTON", {
     id = "GLUTTON",
     name = "Glutton preset",
     desc = "Glutton preset description!",

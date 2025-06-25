@@ -20,6 +20,10 @@ local GluttonScore = Class(Widget, function(self, owner)
 end)
 
 function GluttonScore:OnUpdate(dt)
+    if not TheWorld.net or not TheWorld.net.components.gluttonmanager then
+        return
+    end
+
     local calorie_text = "Team's calories eaten: " .. GluttonUtil.format_num(TheWorld.net.components.gluttonmanager:GetTotalCalories(), 0)
     self.calories_widget:SetString(calorie_text)
 

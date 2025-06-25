@@ -13,6 +13,6 @@ AddShardModRPCHandler("glutton", "StartGlutton", function(shardid)
     Shard_StartGlutton()
 end)
 
-AddShardModRPCHandler("glutton", "SyncGlutton", function(shardid, data)
-    Shard_SyncGlutton(data)
+AddShardModRPCHandler("glutton", "SyncGlutton", function(shardid, game_state, game_timer, total_calories)
+    Shard_SyncGlutton(game_state, game_timer, total_calories)
 end)
