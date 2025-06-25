@@ -43,12 +43,12 @@ local _net_reset_time = net_smallbyte(self.inst.GUID, "reset_time", "reset_timed
 --[[ Private event listeners ]]
 --------------------------------------------------------------------------
 
-local function OnPlayerEat(player, data)
+local OnEatCalories = _ismastersim and function(player, data)
     if _net_game_state:value() ~= GLUTTON_GAME_STATES.STARTED then
         return
     end
 
-    local calories = math.max(data.food.components.edible:GetHunger(inst), 1)
+    local calories = math.max(data.base_calories, 1)
 
     local crock_pot_mult = data.food:HasTag("preparedfood") and TUNING.PREPARED_FOOD_MULT or 1
     local cooked_mult = string.find(data.food.prefab, "cooked") ~= nil and 3 or 1
@@ -77,14 +77,23 @@ local function OnPlayerEat(player, data)
     TheNet:Announce(ate_annouce, player.entity)
 end
 
-local function OnPlayerSpawned(src, player)
-	if _ismastersim and TUNING.GLUTTON_AUTO_RESET then
+local OnPlayerEat = _ismastersim and function(player, data)
+    OnEatCalories(player, {food = data.food, base_calories = data.food.components.edible:GetHunger(player)})
+end or nil
+
+local OnEatSoul = _ismastersim and function(player, data)
+    OnEatCalories(player, {food = data.soul, base_calories = TUNING.CALORIES_MED * TUNING.SOULS_MULT})
+end or nil
+
+local OnPlayerSpawned = _ismastersim and function(src, player)
+	if TUNING.GLUTTON_AUTO_RESET then
 		self:StartGame()
 	end
-end
+end or nil
 
-local function OnPlayerJoined(src, player)
+local OnPlayerJoined = _ismastersim and function(src, player)
     _world:ListenForEvent("oneat", OnPlayerEat, player)
+    _world:ListenForEvent("oneatsoul", OnEatSoul, player)
 
     if _game_state == GLUTTON_GAME_STATES.WAIT_TO_START then
         SetSimPause(true)
@@ -112,11 +121,12 @@ local function OnPlayerJoined(src, player)
         end
     end
     _spawned_extra_item = true
-end
+end or nil
 
-local function OnPlayerLeft(src, player)
+local OnPlayerLeft = _ismastersim and function(src, player)
     _world:RemoveEventCallback("oneat", OnPlayerEat, player)
-end
+    _world:RemoveEventCallback("oneatsoul", OnEatSoul, player)
+end or nil
 
 local OnGluttonUpdate = _ismastersim and function(src, data)
     if _ismastershard then
