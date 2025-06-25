@@ -16,6 +16,7 @@ local tune = {
     SOULS_MULT = 1,
 
     GLUTTON_GAME_TIME = modenv.GetModConfigData("game_time") * 60,
+    GLUTTON_AUTO_RESET = modenv.GetModConfigData("game_flow") == "auto",
 }
 
 for k, v in pairs(tune) do

@@ -1,17 +1,8 @@
 local modenv = env
 GLOBAL.setfenv(1, GLOBAL)
 
-function GameSetup(inst)
-    ANNOUNCEMENT_LIFETIME = 3
-    ANNOUNCEMENT_FADE_TIME = 1
-    ANNOUNCEMENT_QUEUE_SIZE = 4
-
+local function GameSetup(inst)
     if TheNet:GetServerGameMode() == "glutton" then
-        print("### Glutton Mode ###")
-
-        inst.game_flow = modenv.GetModConfigData("game_flow")
-        inst.game_time = modenv.GetModConfigData("game_time")
-
         inst:AddComponent("gluttonmanager")
     else
         print("Not enabling glutton because the server game mode isn't matching. To enable this for dedicated servers, set game_mode = glutton in the [network] section of your settings.ini file.")
@@ -22,5 +13,9 @@ modenv.AddPrefabPostInit("cave_network", GameSetup)
 modenv.AddPrefabPostInit("forest_network", GameSetup)
 
 function StartGlutton()
+    if TheNet:GetServerGameMode() ~= "glutton" then
+        print("Not enabling glutton because the server game mode isn't matching. To enable this for dedicated servers, set game_mode = glutton in the [network] section of your settings.ini file.")
+        return
+    end
     Shard_StartGlutton()
 end

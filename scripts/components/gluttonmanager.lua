@@ -1,12 +1,8 @@
 --------------------------------------------------------------------------
---[[ Constants ]]
+--[[ Dependencies ]]
 --------------------------------------------------------------------------
 
-local GAME_STATE = {
-    WAIT_TO_START = 0,
-    STARTED = 1,
-    OVER_TIMESUP = 2
-}
+local GameOverDialogScreen = require("screens/gameoverdialog")
 
 --------------------------------------------------------------------------
 --[[ GluttonManager class definition ]]
@@ -29,6 +25,7 @@ local _ismastershard = _world.ismastershard
 --Master simulation
 local _game_state
 local _game_timer
+local _reset_time
 
 --Secondard simulation
 
@@ -36,26 +33,11 @@ local _game_timer
 local _net_game_state = net_ushortint(inst.GUID, "glutton.net_game_state", "game_state_dirty")
 local _net_game_timer = net_float(inst.GUID, "glutton.net_game_timer", "game_timer_dirty")
 local _net_total_calories = net_float(inst.GUID, "glutton.net_total_calories", "total_calories_dirty")
--- local net_reset_time = net_smallbyte(self.inst.GUID, "reset_time", "reset_timedirty" )
-
-
---[[
-local PopupDialogScreen 	= require("screens/popupdialog")
-local BigPopupDialogScreen 	= require("screens/bigpopupdialog")
-local GameOverDialogScreen 	= require("screens/gameoverdialog")
-local Widget				= require "widgets/widget"
-local Text 					= require "widgets/text"
-
-]]
-
+local _net_reset_time = net_smallbyte(self.inst.GUID, "reset_time", "reset_timedirty") -- 0-63
 
 --------------------------------------------------------------------------
 --[[ Private event listeners ]]
 --------------------------------------------------------------------------
-
--- local function OnResetTimeDirty(inst)
--- 	inst.components.gluttonmanager:SetResetTimer( inst.components.gluttonmanager.net_reset_time:value() )
--- end
 
 local function CalculateCalories(food)
     local calories = math.max(food.components.edible:GetHunger(inst), 1)
@@ -86,25 +68,26 @@ local function BuildAnnouceString(player, calories)
 end
 
 local function OnPlayerEat(player, data)
-    if _net_game_state:value() ~= GAME_STATE.STARTED then
+    if _net_game_state:value() ~= GLUTTON_GAME_STATES.STARTED then
         return
     end
 
-    local hunger_value = CalculateCalories(data.food)
-    local modified_hunger_value = hunger_value * player.components.gluttonbonus.glutton_bonus
+    local calories = CalculateCalories(data.food)
+    local calories_with_bonus = calories * player.components.gluttonbonus.glutton_bonus
+    player.components.gluttonbonus:OnEat(calories)
 
-    player.components.gluttonbonus:OnEat(hunger_value)
-    _world:PushEvent("gluttonupdate", {total_calories = modified_hunger_value})
-    SendModRPCToShard(SHARD_MOD_RPC["glutton"]["SyncGlutton"], nil, {total_calories = modified_hunger_value})
+    local update_data = {total_calories = calories_with_bonus}
+    _world:PushEvent("gluttonupdate", update_data)
+    SendModRPCToShard(SHARD_MOD_RPC["glutton"]["SyncGlutton"], nil, update_data)
 
-    local annouce_string = BuildAnnouceString(player, modified_hunger_value)
+    local annouce_string = BuildAnnouceString(player, calories_with_bonus)
     TheNet:Announce(annouce_string, player.entity)
 end
 
 local function OnPlayerJoined(src, player)
     _world:ListenForEvent("oneat", OnPlayerEat, player)
 
-    if _game_state == GAME_STATE.WAIT_TO_START then
+    if _game_state == GLUTTON_GAME_STATES.WAIT_TO_START then
         SetSimPause(true)
     end
 
@@ -137,8 +120,6 @@ local function OnPlayerLeft(src, player)
     _world:RemoveEventCallback("oneat", OnPlayerEat, player)
 end
 
-
-
 local OnGluttonUpdate = _ismastersim and function(src, data)
     if _ismastershard then
         _game_state = data.game_state or _game_state
@@ -156,7 +137,6 @@ local OnGluttonUpdate = _ismastersim and function(src, data)
     end
 end or nil
 
-
 --------------------------------------------------------------------------
 --[[ Public methods ]]
 --------------------------------------------------------------------------
@@ -165,41 +145,43 @@ self.SetGameState = _ismastershard and function(src, game_state)
     _game_state = game_state
     _net_game_state:set(game_state)
 
-    self.inst:DoTaskInTime((TUNING.GLUTTON_GAME_TIME - 5) * 60, function() TheNet:Announce( "5 minutes left!" ) end, "5 min")
-    self.inst:DoTaskInTime((TUNING.GLUTTON_GAME_TIME - 1) * 60, function() TheNet:Announce( "1 minute left!!" ) end, "1 min")
-    self.inst:DoTaskInTime((TUNING.GLUTTON_GAME_TIME - 1) * 60 + 50, function() TheNet:Announce( "10 seconds left!!!" ) end, "10 secs")
+    local update_data = {game_state = game_state}
+    SendModRPCToShard(SHARD_MOD_RPC["glutton"]["SyncGlutton"], nil, update_data)
+
+    self.inst:DoTaskInTime(TUNING.GLUTTON_GAME_TIME - 5 * 60, function() TheNet:Announce("5 minutes left!") end)
+    self.inst:DoTaskInTime(TUNING.GLUTTON_GAME_TIME - 1 * 60, function() TheNet:Announce("1 minute left!!") end)
+    self.inst:DoTaskInTime(TUNING.GLUTTON_GAME_TIME - 10, function() TheNet:Announce("10 seconds left!!!") end)
 end or nil
 
 self.SetGameTimer = _ismastershard and function(src, game_timer)
     _game_timer = game_timer
     _net_game_timer:set(game_timer)
+
+    local update_data = {game_timer = game_timer}
+    SendModRPCToShard(SHARD_MOD_RPC["glutton"]["SyncGlutton"], nil, update_data)
 end or nil
 
-self.SetResetTimer = _ismastersim and function(src, reset_time)
-    -- if self.reset_dialog then
-    --     self.reset_dialog:UpdateCountdown(reset_time)
-    -- end
-    if _ismastersim then
-        self.net_reset_time:set(reset_time)
-    end
+self.SetResetTimer = _ismastershard and function(src, reset_time)
+    _reset_time = _reset_time
+    _net_reset_time:set(reset_time)
 end or nil
 
 self.StartGame = _ismastershard and function(src)
-    if _game_state ~= GAME_STATE.WAIT_TO_START then
+    if _game_state ~= GLUTTON_GAME_STATES.WAIT_TO_START then
         return
     end
 
     SetSimPause(false)
     _world:PushEvent("ms_setautosaveenabled", false)
 
-    self:SetGameState(GAME_STATE.STARTED)
+    self:SetGameState(GLUTTON_GAME_STATES.STARTED)
     self:SetGameTimer(TUNING.GLUTTON_GAME_TIME)
 end or nil
 
 self.StopGame = _ismastershard and function(src)
-    if _game_state ~= GAME_STATE.OVER_TIMESUP then
+    if _game_state ~= GLUTTON_GAME_STATES.OVER_TIMESUP then
         self:SetGameTimer(0.0)
-        self:SetGameState(GAME_STATE.OVER_TIMESUP)
+        self:SetGameState(GLUTTON_GAME_STATES.OVER_TIMESUP)
     end
 end or nil
 
@@ -217,7 +199,6 @@ end
 function self:GetGameState()
     return _net_game_state:value()
 end
-
 
 --------------------------------------------------------------------------
 --[[ Initialisation ]]
@@ -244,20 +225,16 @@ if _ismastersim then
 		-- 		"pause"
 		-- 	)
 		-- end
-end
+    if TUNING.GLUTTON_AUTO_RESET then
+        _reset_time = 15
+    else
+        print("### call StartGlutton() to start the game ###")
+        _reset_time = 0
+    end
 
--- if self.inst.game_flow == "auto" then
---     self.reset_time = 15
--- else
---     print("### call StartGlutton() to start the game ###")
---     self.reset_time = 0
--- end
-
-if _ismastershard then
-    _game_state = GAME_STATE.WAIT_TO_START
+    _game_state = GLUTTON_GAME_STATES.WAIT_TO_START
     _game_timer = -1
 end
-
 
 -- self.inst:ListenForEvent("playeractivated", IntroMessage, TheWorld)
 
@@ -269,17 +246,18 @@ self.inst:StartUpdatingComponent(self)
 
 function self:OnUpdate(dt)
     --create client UI for reset screen
-    -- if _game_state == GAME_STATE.OVER_TIMESUP then
-    --     if self.reset_dialog == nil then
-    --         local title = "The game is over. The time is up."
-    --         local message = "\nYour team ate a total of " .. _net_total_calories:value() .. " calories. Thanks for playing!"
-
-    --         self.reset_dialog = GameOverDialogScreen( title, message )
-    --         self:SetResetTimer(self.reset_time)
-
-    --         TheFrontEnd:PushScreen(self.reset_dialog)
-    --     end
-    -- end
+    if _game_state == GLUTTON_GAME_STATES.OVER_TIMESUP then
+        if self.reset_dialog == nil then
+            local title = "The game is over. The time is up."
+            local message = "\nYour team ate a total of " .. _net_total_calories:value() .. " calories. Thanks for playing!"
+            self.reset_dialog = GameOverDialogScreen(title, message)
+            if _ismastershard then
+                self:SetResetTimer(_reset_time)
+            end
+            self.reset_dialog:UpdateCountdown(_net_reset_time:value())
+            TheFrontEnd:PushScreen(self.reset_dialog)
+        end
+    end
 
     -- if self.game_state == GAME_STATE.STARTED then
     --     if wait_on_screen_stack then
@@ -293,18 +271,20 @@ function self:OnUpdate(dt)
         return
     end
 
-    if _game_state == GAME_STATE.OVER_TIMESUP then
-        -- if _world.game_flow == "auto" then
-        --     local last_whole_time = math.ceil(self.reset_time)
-        --     self.reset_time = self.reset_time - dt
-        --     if math.ceil(self.reset_time) < last_whole_time then
-        --         self:SetResetTimer( math.ceil(self.reset_time) )
-        --     end
-        --     if self.reset_time < 0 then
-        --         c_regenerateworld()
-        --     end
-        -- end
-    elseif _game_state == GAME_STATE.STARTED then
+    if _game_state == GLUTTON_GAME_STATES.OVER_TIMESUP then
+        if not TUNING.GLUTTON_AUTO_RESET then
+            return
+        end
+
+        local last_whole_time = math.ceil(_reset_time)
+        _reset_time = _reset_time - dt
+        if math.ceil(_reset_time) < last_whole_time then
+            self:SetResetTimer(math.ceil(_reset_time))
+        end
+        if _reset_time < 0 then
+            c_regenerateworld()
+        end
+    elseif _game_state == GLUTTON_GAME_STATES.STARTED then
         if _game_timer < 0 then
             return
         end
