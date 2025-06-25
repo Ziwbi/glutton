@@ -12,7 +12,7 @@ if map_type == "fixed" then
     SEED = seed
 end
 
-modenv.AddLevel("LEVELTYPE_GLUTTON", {
+modenv.AddLevel(LEVELTYPE.SURVIVAL, {
     id = "GLUTTON",
     name = "Glutton preset",
     desc = "Glutton preset description!",
