@@ -5,6 +5,7 @@
 local GameOverDialogScreen = require("screens/gameoverdialog")
 local PopupDialogScreen 	= require("screens/popupdialog")
 local BigPopupDialogScreen 	= require("screens/bigpopupdialog")
+local GluttonUtil = require("main/glutton_util")
 
 --------------------------------------------------------------------------
 --[[ GluttonManager class definition ]]
@@ -42,49 +43,38 @@ local _net_reset_time = net_smallbyte(self.inst.GUID, "reset_time", "reset_timed
 --[[ Private event listeners ]]
 --------------------------------------------------------------------------
 
-local function CalculateCalories(food)
-    local calories = math.max(food.components.edible:GetHunger(inst), 1)
-
-    local crock_pot_mult = food:HasTag("preparedfoods") and TUNING.PREPARED_FOOD_MULT or 1
-    local cooked_mult = string.find(food.prefab, "cooked") ~= nil and 3 or 1
-    local souls_mult = food:HasTag("soul") and 0.5 or 1
-
-    return calories * TUNING.GLUTTON_BASE_MULT * crock_pot_mult * cooked_mult * souls_mult
-end
-
-local function BuildAnnouceString(player, calories)
-    --[[
-        local bonuses_plural = "Bonus"
-    if crock_pot_bonus > 1 or cooked_bonus > 1 then
-        bonuses_plural = "Bonuses"
-    end			
-    local ate_annouce = player.name .. " ate " .. format_num( modified_hunger_value, 0 ) .. " calories. (" .. bonuses_plural .. " - Glutton: " .. string.format("x%.1f", glutton_bonus) 
-    if crock_pot_bonus > 1 then
-        ate_annouce = ate_annouce .. " Crock Pot: " .. string.format("x%i", crock_pot_bonus)
-    end
-    if cooked_bonus > 1 then
-        ate_annouce = ate_annouce .. " Fire Roasted: " .. string.format("x%i", cooked_bonus)
-    end
-    ate_annouce = ate_annouce .. ")"
-    ]]
-    return string.format("%s ate %f", player.name, calories)
-end
-
 local function OnPlayerEat(player, data)
     if _net_game_state:value() ~= GLUTTON_GAME_STATES.STARTED then
         return
     end
 
-    local calories = CalculateCalories(data.food)
-    local calories_with_bonus = calories * player.components.gluttonbonus.glutton_bonus
+    local calories = math.max(data.food.components.edible:GetHunger(inst), 1)
+
+    local crock_pot_mult = data.food:HasTag("preparedfood") and TUNING.PREPARED_FOOD_MULT or 1
+    local cooked_mult = string.find(data.food.prefab, "cooked") ~= nil and 3 or 1
+
+    calories = calories * TUNING.GLUTTON_BASE_MULT * crock_pot_mult * cooked_mult
+    local glutton_bonus = player.components.gluttonbonus.glutton_bonus
+    local calories_with_bonus = calories * glutton_bonus
     player.components.gluttonbonus:OnEat(calories)
 
     local update_data = {total_calories = calories_with_bonus}
     _world:PushEvent("gluttonupdate", update_data)
     SendModRPCToShard(SHARD_MOD_RPC["glutton"]["SyncGlutton"], nil, update_data)
 
-    local annouce_string = BuildAnnouceString(player, calories_with_bonus)
-    TheNet:Announce(annouce_string, player.entity)
+    local bonuses_plural = "Bonus"
+    if crock_pot_mult > 1 or cooked_mult > 1 then
+        bonuses_plural = "Bonuses"
+    end
+    local ate_annouce = player.name .. " ate " .. GluttonUtil.format_num(calories_with_bonus, 0) .. " calories. (" .. bonuses_plural .. " - Glutton: " .. string.format("x%.1f", glutton_bonus)
+    if crock_pot_mult > 1 then
+        ate_annouce = ate_annouce .. " Crock Pot: " .. string.format("x%i", crock_pot_mult)
+    end
+    if cooked_mult > 1 then
+        ate_annouce = ate_annouce .. " Fire Roasted: " .. string.format("x%i", cooked_mult)
+    end
+    ate_annouce = ate_annouce .. ")"
+    TheNet:Announce(ate_annouce, player.entity)
 end
 
 local function OnPlayerSpawned(src, player)

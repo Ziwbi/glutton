@@ -1,6 +1,6 @@
 local Widget = require("widgets/widget")
 local Text = require("widgets/text")
-
+local GluttonUtil = require("main/glutton_util")
 
 local GluttonScore = Class(Widget, function(self, owner)
     self.owner = owner
@@ -20,11 +20,16 @@ local GluttonScore = Class(Widget, function(self, owner)
 end)
 
 function GluttonScore:OnUpdate(dt)
-    local calorie_text = "Team's calories eaten: " .. TheWorld.net.components.gluttonmanager:GetTotalCalories()
+    local calorie_text = "Team's calories eaten: " .. GluttonUtil.format_num(TheWorld.net.components.gluttonmanager:GetTotalCalories(), 0)
     self.calories_widget:SetString(calorie_text)
 
     local time_left = TheWorld.net.components.gluttonmanager:GetGameTimer()
-    local text = TheWorld.net.components.gluttonmanager:GetGameState() == 1 and tostring(time_left) or "Waiting to start"
+    local text
+    if TheWorld.net.components.gluttonmanager:GetGameState() == GLUTTON_GAME_STATES.STARTED then
+        text = "Time left to eat: " .. SecondsToTimeString(time_left)
+    else
+        text = "Waiting to start"
+    end
     self.time_widget:SetString(text)
 
     local bonus = ThePlayer.components.gluttonbonus.glutton_bonus
