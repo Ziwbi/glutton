@@ -22,5 +22,5 @@ modenv.AddPrefabPostInit("cave_network", GameSetup)
 modenv.AddPrefabPostInit("forest_network", GameSetup)
 
 function StartGlutton()
-    SendModRPCToShard("glutton", "StartGlutton", SHARDID.MASTER)
+    SendModRPCToShard(SHARD_MOD_RPC["glutton"]["StartGlutton"], SHARDID.MASTER)
 end
