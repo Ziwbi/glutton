@@ -13,7 +13,7 @@ local tune = {
     GLUTTON_BASE_MULT = 3,
     PREPARED_FOOD_MULT = 6,
     SPICED_FOOD_MULT = 1.5,
-    SOULS_MULT = 0.5,
+    SOULS_MULT = 1/3,
 
     GLUTTON_GAME_TIME = modenv.GetModConfigData("game_time") * 60,
     GLUTTON_AUTO_RESET = modenv.GetModConfigData("game_flow") == "auto",

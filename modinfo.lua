@@ -6,7 +6,9 @@ This is a cooperative tournament mode. The object is for your team to collect fo
 \
 Time is limited so you can hold shift to sprint, careful though, it will burn lots of calories.\
 \
-To enable this game mode on dedicated servers, set game_mode = glutton in the [gameplay] section of your cluster.ini file."
+To enable this game mode on dedicated servers, set game_mode = glutton in the [gameplay] section of your cluster.ini file.\
+\
+IMPORTANT NOTE: This mod doesn't work on GNU/Linux version of the game with caves, it is a game engine issue, I can't fix it."
 
 author = "Peter Andrews (peter_a_klei), ziwbi"
 version = "1.0"
