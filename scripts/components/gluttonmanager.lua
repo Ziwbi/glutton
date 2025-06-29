@@ -241,7 +241,7 @@ end
 
 if _ismastersim then
     self.inst:ListenForEvent("ms_playerjoined", OnPlayerJoined, _world)
-    -- self.inst:ListenForEvent("ms_playerleft", OnPlayerLeft, _world)
+    self.inst:ListenForEvent("ms_playerleft", OnPlayerLeft, _world)
     self.inst:ListenForEvent("gluttonupdate", OnGluttonUpdate, _world)
 
     _net_game_state:set(GLUTTON_GAME_STATES.WAIT_TO_START)
