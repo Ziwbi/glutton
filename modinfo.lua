@@ -6,7 +6,7 @@ This is a cooperative tournament mode. The object is for your team to collect fo
 \
 Time is limited so you can hold shift to sprint, careful though, it will burn lots of calories.\
 \
-To enable this game mode on dedicated servers, set game_mode = glutton in the [network] section of your settings.ini file."
+To enable this game mode on dedicated servers, set game_mode = glutton in the [gameplay] section of your cluster.ini file."
 
 author = "Peter Andrews (peter_a_klei), ziwbi"
 version = "1.0"

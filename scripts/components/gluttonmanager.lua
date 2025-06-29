@@ -99,7 +99,7 @@ local OnPlayerJoined = _ismastersim and function(src, player)
     _world:ListenForEvent("oneat", OnPlayerEat, player)
     _world:ListenForEvent("oneatsoul", OnEatSoul, player)
 
-    if _game_state == GLUTTON_GAME_STATES.WAIT_TO_START then
+    if _net_game_state:value() == GLUTTON_GAME_STATES.WAIT_TO_START then
         SetSimPause(true)
     end
 
@@ -241,8 +241,13 @@ end
 
 if _ismastersim then
     self.inst:ListenForEvent("ms_playerjoined", OnPlayerJoined, _world)
-    self.inst:ListenForEvent("ms_playerleft", OnPlayerLeft, _world)
+    -- self.inst:ListenForEvent("ms_playerleft", OnPlayerLeft, _world)
     self.inst:ListenForEvent("gluttonupdate", OnGluttonUpdate, _world)
+
+    _net_game_state:set(GLUTTON_GAME_STATES.WAIT_TO_START)
+    _net_total_calories:set(0)
+    _net_game_timer:set(-1)
+    _net_reset_time:set(15)
 
     if not TheNet:IsDedicated() then
         self.inst:DoTaskInTime(5, function()
@@ -258,7 +263,7 @@ if _ismastersim then
 
     self.inst:ListenForEvent("ms_playerspawn", OnPlayerSpawned, _world)
 
-    _net_total_calories:set(0)
+
 
     if TUNING.GLUTTON_AUTO_RESET then
         _reset_time = 15
@@ -281,7 +286,7 @@ self.inst:StartUpdatingComponent(self)
 
 function self:OnUpdate(dt)
     --create client UI for reset screen
-    if _game_state == GLUTTON_GAME_STATES.OVER_TIMESUP then
+    if _net_game_state:value() == GLUTTON_GAME_STATES.OVER_TIMESUP then
         if self.reset_dialog == nil then
             local title = "The game is over. The time is up."
             local message = "\nYour team ate a total of " .. _net_total_calories:value() .. " calories. Thanks for playing!"
