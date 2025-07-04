@@ -11,7 +11,7 @@ To enable this game mode on dedicated servers, set game_mode = glutton in the [g
 IMPORTANT NOTE: This mod doesn't work on GNU/Linux version of the game with caves, it is a game engine issue, I can't fix it."
 
 author = "Peter Andrews (peter_a_klei), ziwbi"
-version = "1.0"
+version = "1.1"
 
 -- This is the URL name of the mod's thread on the forum; the part after the index.php? and before the first & in the URL
 -- Example:
@@ -37,7 +37,7 @@ client_only_mod = false
 dst_compatible = true
 
 --These tags allow the server running this mod to be found with filters from the server listing screen
-server_filter_tags = {"gamemode", "game mode"}
+server_filter_tags = {"glutton"}
 
 game_modes =
 {
@@ -59,7 +59,7 @@ configuration_options =
 	{
         name = "game_time",
         label = "Game Time",
-        options = 
+        options =
         {
             {description = "5 minutes", data = 5},
             {description = "10 minutes", data = 10},
@@ -72,7 +72,7 @@ configuration_options =
 	{
         name = "map_gen",
         label = "Map Type",
-        options = 
+        options =
         {
             {description = "Random", data = "random", hover = "A random world is generated."},
             {description = "Fixed", data = "fixed", hover = "Uses a fixed map. Intended for tournament use."},
@@ -83,7 +83,7 @@ configuration_options =
         name = "game_flow",
         label = "Game Flow",
 		hover = "Controls when the game starts.\nDedicated servers can set this value to \"manual\"\nto control the flow in a LAN tournament.",
-        options = 
+        options =
         {
             {description = "Automatic", data = "auto"}
 		},

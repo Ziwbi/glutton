@@ -59,7 +59,7 @@ local OnEatCalories = _ismastersim and function(player, data)
     local calories_with_bonus = calories * glutton_bonus
     player.components.gluttonbonus:OnEat(calories)
 
-    local update_data = {total_calories = calories_with_bonus}
+    local update_data = {total_calories = (_net_total_calories:value() or 0) + calories_with_bonus}
     _world:PushEvent("gluttonupdate", update_data)
     SendModRPCToShard(SHARD_MOD_RPC["glutton"]["SyncGlutton"], nil, nil, nil, calories_with_bonus)
 
