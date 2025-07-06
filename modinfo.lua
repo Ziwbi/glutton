@@ -11,7 +11,7 @@ To enable this game mode on dedicated servers, set game_mode = glutton in the [g
 IMPORTANT NOTE: This mod doesn't work on GNU/Linux version of the game with caves, it is a game engine issue, I can't fix it."
 
 author = "Peter Andrews (peter_a_klei), ziwbi"
-version = "1.1"
+version = "1.2"
 
 -- This is the URL name of the mod's thread on the forum; the part after the index.php? and before the first & in the URL
 -- Example:

@@ -59,9 +59,8 @@ local OnEatCalories = _ismastersim and function(player, data)
     local calories_with_bonus = calories * glutton_bonus
     player.components.gluttonbonus:OnEat(calories)
 
-    local update_data = {total_calories = (_net_total_calories:value() or 0) + calories_with_bonus}
-    _world:PushEvent("gluttonupdate", update_data)
-    SendModRPCToShard(SHARD_MOD_RPC["glutton"]["SyncGlutton"], nil, nil, nil, calories_with_bonus)
+    _world:PushEvent("gluttonupdate", {total_calories = (_net_total_calories:value() or 0) + calories_with_bonus})
+    SendModRPCToShard(SHARD_MOD_RPC["glutton"]["SyncGlutton"], nil, nil, nil, (_net_total_calories:value() or 0) + calories_with_bonus)
 
     local bonuses_plural = "Bonus"
     if crock_pot_mult > 1 or cooked_mult > 1 or spice_mult > 1 then
@@ -337,6 +336,10 @@ function self:OnUpdate(dt)
             self:StopGame()
         end
     end
+end
+
+function self:GetDebugString()
+    return string.format("Total: %.2f, Time Left: %.1f", self:GetTotalCalories(), self:GetGameTimer())
 end
 
 end)
